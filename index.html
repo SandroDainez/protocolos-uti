@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Protocolos Clínicos | UTI</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glass-effect {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+  <!-- VISUALIZADOR INTEGRADO DE PROTOCOLO (COM BOTÃO VOLTAR) -->
+  <div id="protocol-viewer" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex flex-col">
+    <!-- Barra Superior Fixa do Visualizador -->
+    <div class="h-16 px-4 sm:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0 shadow-sm">
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- BOTÃO VOLTAR PRINCIPAL -->
+        <button onclick="closeViewer()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-xl text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-sm shrink-0">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Voltar aos Protocolos</span>
+        </button>
+        <div class="hidden sm:block h-6 w-px bg-slate-200 dark:border-slate-800"></div>
+        <div class="truncate">
+          <h3 id="viewer-title" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate"></h3>
+          <div class="flex items-center gap-2">
+            <span id="viewer-category" class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold"></span>
+            <span id="viewer-version" class="text-[11px] text-slate-400"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações do Visualizador -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="copyCurrentViewerLink()" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs flex items-center gap-1.5 transition" title="Copiar Link">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          <span class="hidden md:inline font-medium">Copiar Link</span>
+        </button>
+        <a id="viewer-external-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5 transition">
+          <span class="hidden sm:inline">Abrir em Nova Aba</span>
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+        </a>
+        <button onclick="closeViewer()" title="Fechar Visualizador (Esc)" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Área de Exibição do Protocolo -->
+    <div class="flex-1 relative bg-slate-100 dark:bg-slate-950 overflow-hidden flex flex-col">
+      <!-- Faixa de auxílio caso a intranet ou o Google Drive do hospital restrinjam iframe -->
+      <div class="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/50 px-4 py-2 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 truncate">
+          <i data-lucide="info" class="w-4 h-4 shrink-0 text-amber-600"></i>
+          <span class="truncate">Visualizando documento dentro do portal. Se o arquivo estiver bloqueado por políticas do hospital:</span>
+        </div>
+        <a id="viewer-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="underline font-semibold text-amber-900 dark:text-amber-200 shrink-0">
+          Abrir diretamente ↗
+        </a>
+      </div>
+
+      <!-- Iframe do Documento -->
+      <iframe id="viewer-iframe" src="" class="w-full flex-1 border-0 bg-white dark:bg-slate-900" allow="fullscreen" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 glass-effect border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo e Título -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+            <i data-lucide="activity" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Protocolos UTI
+              </h1>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                Terapia Intensiva
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Guia rápido de diretrizes clínicas e condutas</p>
+          </div>
+        </div>
+
+        <!-- Ações do Topo -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Botão Adicionar -->
+          <button onclick="openModal()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Adicionar Protocolo</span>
+          </button>
+
+          <!-- Gerenciar / Backup de Dados -->
+          <button onclick="exportDataModal()" title="Salvar / Fazer Backup do data.js" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+            <i data-lucide="save" class="w-5 h-5"></i>
+          </button>
+
+          <!-- Alternador de Tema Escuro / Claro -->
+          <button id="theme-toggle" onclick="toggleTheme()" title="Alternar Modo Escuro (Plantão Noturno)" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+            <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CORPO PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- BARRA DE ALERTA RÁPIDO / EMERGÊNCIA (Aparece se houver emergências cadastradas) -->
+    <div id="emergency-banner" class="mb-8 p-4 rounded-xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-transparent border border-red-200 dark:border-red-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-start sm:items-center gap-3">
+        <div class="p-2 bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 rounded-lg shrink-0">
+          <i data-lucide="siren" class="w-6 h-6 animate-pulse"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-red-800 dark:text-red-400">Condutas de Emergência Crítica</h2>
+          <p class="text-xs text-slate-600 dark:text-slate-300">Acesso rápido aos protocolos marcados com prioridade de emergência.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="filterEmergencyOnly()" id="btn-emergency-filter" class="w-full sm:w-auto px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-sm transition flex items-center justify-center gap-1.5">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          Filtrar Emergências
+        </button>
+      </div>
+    </div>
+
+    <!-- BUSCA E FILTROS -->
+    <div id="search-filter-section" class="mb-8 space-y-4">
+      <!-- Input de Busca -->
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="search" class="w-5 h-5"></i>
+        </div>
+        <input 
+          type="text" 
+          id="search-input" 
+          oninput="handleSearch(this.value)"
+          placeholder="Buscar nos seus protocolos por título, categoria, drogas ou palavras-chave... (Atalho: '/')" 
+          class="w-full pl-11 pr-28 py-3.5 text-sm sm:text-base rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm"
+        >
+        <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center gap-1.5">
+          <span id="protocol-counter" class="text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
+            0 protocolos
+          </span>
+        </div>
+      </div>
+
+      <!-- Filtro por Categorias (Pills) -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-pills">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </div>
+
+    <!-- GRID DE PROTOCOLOS -->
+    <div id="protocols-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Renderizado via JavaScript -->
+    </div>
+
+    <!-- TELA INICIAL VAZIA / BEM-VINDO (Quando não há protocolos cadastrados) -->
+    <div id="initial-empty-state" class="hidden text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 max-w-xl mx-auto my-6 shadow-sm">
+      <div class="w-16 h-16 mx-auto mb-4 bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 rounded-2xl flex items-center justify-center">
+        <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white">Seu portal está livre e pronto!</h3>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+        Todos os protocolos de exemplo foram removidos. Agora você pode adicionar os protocolos reais da sua UTI. Cada um deles terá o mesmo padrão visual, com opção de visualizar direto no site e botão fácil de retornar.
+      </p>
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button onclick="openModal()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-xl text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-md shadow-sky-500/20">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          Cadastrar Meu Primeiro Protocolo
+        </button>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE DE BUSCA SEM RESULTADOS -->
+    <div id="search-empty-state" class="hidden text-center py-16">
+      <div class="w-16 h-16 mx-auto mb-4 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+        <i data-lucide="folder-search" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300">Nenhum protocolo encontrado</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+        Tente usar outros termos de busca ou limpe os filtros de categoria.
+      </p>
+      <button onclick="resetFilters()" class="mt-4 px-4 py-2 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline">
+        Limpar busca e filtros
+      </button>
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADICIONAR / EDITAR PROTOCOLO -->
+  <div id="protocol-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="file-plus-2" class="w-5 h-5 text-sky-600 dark:text-sky-400"></i>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white" id="modal-title">Novo Protocolo Clínico</h3>
+        </div>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="protocol-form" onsubmit="saveProtocol(event)" class="p-6 space-y-4">
+        <input type="hidden" id="editing-id" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título do Protocolo *</label>
+          <input type="text" id="form-title" required placeholder="Ex: Protocolo de Hipotermia Terapêutica / Manejo de Sepse" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Especialidade / Categoria *</label>
+            <div class="space-y-1.5">
+              <select id="form-category" onchange="checkCustomCategory(this.value)" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="Hemodinâmica & Choque">Hemodinâmica & Choque</option>
+                <option value="Ventilação & Via Aérea">Ventilação & Via Aérea</option>
+                <option value="Infectologia & Sepse">Infectologia & Sepse</option>
+                <option value="Sedação, Analgesia & Neuro">Sedação, Analgesia & Neuro</option>
+                <option value="Nefrologia & Distúrbios">Nefrologia & Distúrbios</option>
+                <option value="Cuidados de Enfermagem">Cuidados de Enfermagem</option>
+                <option value="Fisioterapia & Mobilização">Fisioterapia & Mobilização</option>
+                <option value="Checklists & Rotina">Checklists & Rotina</option>
+                <option value="__NEW__">+ Criar Nova Categoria...</option>
+              </select>
+              <input type="text" id="form-custom-category" placeholder="Digite o nome da nova categoria" class="hidden w-full px-3 py-2 text-xs rounded-lg border border-sky-400 bg-sky-50 dark:bg-sky-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Documento</label>
+            <select id="form-type" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="PDF">Arquivo PDF</option>
+              <option value="Diretriz">Diretriz Institucional</option>
+              <option value="Fluxograma">Fluxograma / Algoritmo</option>
+              <option value="Checklist">Checklist</option>
+              <option value="Tabela">Tabela / Guia Rápido</option>
+              <option value="Google Drive">Google Drive / OneDrive</option>
+              <option value="Link Web">Link Web / Intranet</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Link / URL do Protocolo *</label>
+          <input type="text" id="form-url" required placeholder="https://link-do-drive.com/... ou https://intranet/pdf/..." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <p class="text-[11px] text-slate-400 mt-1">Cole o link do Google Drive, OneDrive, intranet do hospital ou PDF.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Versão / Ano</label>
+            <input type="text" id="form-version" placeholder="Ex: v1.0 (2026)" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+          <div class="flex items-center pt-5">
+            <label class="inline-flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="form-emergency" class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500">
+              <span class="text-xs font-semibold text-red-600 dark:text-red-400">É Emergência Crítica?</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descrição / Resumo Clínico (Opcional)</label>
+          <textarea id="form-description" rows="2" placeholder="Breve resumo com metas terapêuticas, indicações e conduta..." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Palavras-chave / Tags (separadas por vírgula)</label>
+          <input type="text" id="form-tags" placeholder="Ex: sedacao, rass, fentanil, intubacao" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition shadow-sm">
+            Salvar Protocolo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EXPORTAR / GERENCIAR DADOS -->
+  <div id="export-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="database" class="w-5 h-5 text-sky-600 dark:text-sky-400"></i>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Salvar Protocolos no Arquivo (data.js)</h3>
+        </div>
+        <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-slate-600 dark:text-slate-300">
+          Seus protocolos já estão salvos neste navegador. Para torná-los permanentes em outros computadores ou na rede da UTI, você pode baixar o arquivo <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sky-600 font-mono">data.js</code> atualizado ou copiar o código abaixo:
+        </p>
+        <textarea id="export-textarea" rows="10" readonly class="w-full font-mono text-xs p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-all"></textarea>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <button onclick="clearAllProtocols()" class="text-xs text-red-500 hover:text-red-700 hover:underline">
+            Limpar todos os protocolos cadastrados
+          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button onclick="downloadDataJs()" class="px-3.5 py-2 text-xs font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 rounded-lg flex items-center gap-1.5 transition">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Baixar data.js
+            </button>
+            <button onclick="copyExportCode()" class="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg flex items-center gap-1.5 shadow-sm transition">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              Copiar Código
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <footer class="mt-16 border-t border-slate-200 dark:border-slate-800 py-8 bg-white dark:bg-slate-900 text-center text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+        <span>Portal de Protocolos Clínicos - Unidade de Terapia Intensiva</span>
+      </div>
+      <div>
+        <span>Uso interno institucional</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPT DE DADOS (Pode ser data.js vazio ou preenchido) -->
+  <script src="data.js"></script>
+
+  <!-- LÓGICA DA APLICAÇÃO -->
+  <script>
+    const STORAGE_KEY = 'uti_protocols_data_custom_v2';
+    const FAVORITES_KEY = 'uti_protocols_favorites_v2';
+    const THEME_KEY = 'uti_theme_preference';
+
+    // Limpar o storage legado das amostras se existia
+    localStorage.removeItem('uti_protocols_data_v1');
+
+    let protocols = [];
+    let favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    let currentCategory = 'Todas';
+    let searchQuery = '';
+    let isEmergencyFilterActive = false;
+    let currentViewingProtocol = null;
+
+    function init() {
+      // Tema Dark/Light
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcon(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcon(false);
+      }
+
+      // Carregar dados salvos ou do data.js
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          protocols = JSON.parse(savedData);
+        } catch (e) {
+          protocols = typeof INITIAL_PROTOCOLS !== 'undefined' ? [...INITIAL_PROTOCOLS] : [];
+        }
+      } else {
+        protocols = typeof INITIAL_PROTOCOLS !== 'undefined' ? [...INITIAL_PROTOCOLS] : [];
+      }
+
+      renderCategories();
+      renderProtocols();
+      lucide.createIcons();
+
+      // Atalhos de teclado
+      window.addEventListener('keydown', (e) => {
+        // Fechar visualizador com Esc
+        if (e.key === 'Escape') {
+          const viewer = document.getElementById('protocol-viewer');
+          if (viewer && !viewer.classList.contains('hidden')) {
+            closeViewer();
+            return;
+          }
+          const modal = document.getElementById('protocol-modal');
+          if (modal && !modal.classList.contains('hidden')) {
+            closeModal();
+            return;
+          }
+        }
+
+        // Atalho de busca '/'
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          const searchInput = document.getElementById('search-input');
+          if (searchInput) searchInput.focus();
+        }
+      });
+
+      // Suporte ao botão "Voltar" do navegador para fechar o visualizador
+      window.addEventListener('popstate', (e) => {
+        const viewer = document.getElementById('protocol-viewer');
+        if (viewer && !viewer.classList.contains('hidden')) {
+          closeViewer(false);
+        }
+      });
+    }
+
+    // ABRIR VISUALIZADOR DE PROTOCOLO (Com botão voltar integrado)
+    function openViewer(id) {
+      const p = protocols.find(item => item.id === id);
+      if (!p) return;
+
+      currentViewingProtocol = p;
+      const viewer = document.getElementById('protocol-viewer');
+      const titleEl = document.getElementById('viewer-title');
+      const catEl = document.getElementById('viewer-category');
+      const verEl = document.getElementById('viewer-version');
+      const iframe = document.getElementById('viewer-iframe');
+      const extBtn = document.getElementById('viewer-external-btn');
+      const fallbackLink = document.getElementById('viewer-fallback-link');
+
+      titleEl.textContent = p.title;
+      catEl.textContent = p.category || 'Geral';
+      verEl.textContent = p.version ? `• ${p.version}` : '';
+
+      // Tratar links do Google Drive para modo preview se necessário
+      let embedUrl = p.url || '';
+      if (embedUrl.includes('drive.google.com/file/d/')) {
+        embedUrl = embedUrl.replace(/\/view(\?.*)?$/, '/preview');
+      }
+
+      iframe.src = embedUrl;
+      extBtn.href = p.url;
+      fallbackLink.href = p.url;
+
+      viewer.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+
+      // Adiciona histórico para o botão voltar do próprio navegador funcionar
+      history.pushState({ viewerOpen: true }, '');
+      lucide.createIcons();
+    }
+
+    // FECHAR VISUALIZADOR E VOLTAR AOS PROTOCOLOS
+    function closeViewer(triggerBack = true) {
+      const viewer = document.getElementById('protocol-viewer');
+      const iframe = document.getElementById('viewer-iframe');
+      
+      viewer.classList.add('hidden');
+      iframe.src = ''; // Limpa o iframe
+      document.body.classList.remove('overflow-hidden');
+      currentViewingProtocol = null;
+
+      if (triggerBack && history.state && history.state.viewerOpen) {
+        history.back();
+      }
+    }
+
+    function copyCurrentViewerLink() {
+      if (currentViewingProtocol && currentViewingProtocol.url) {
+        copyProtocolLink(currentViewingProtocol.url);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+      lucide.createIcons();
+    }
+
+    function updateThemeIcon(isDark) {
+      const iconBtn = document.getElementById('theme-icon');
+      if (iconBtn) {
+        iconBtn.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+      }
+    }
+
+    function checkCustomCategory(val) {
+      const customInput = document.getElementById('form-custom-category');
+      if (val === '__NEW__') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+        customInput.required = true;
+      } else {
+        customInput.classList.add('hidden');
+        customInput.required = false;
+      }
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('category-pills');
+      const uniqueCats = [...new Set(protocols.map(p => p.category).filter(Boolean))];
+      
+      if (uniqueCats.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const categories = ['Todas', 'Favoritos ⭐', ...uniqueCats];
+      
+      container.innerHTML = categories.map(cat => {
+        const isActive = currentCategory === cat;
+        const activeClass = isActive 
+          ? 'bg-sky-600 text-white shadow-sm' 
+          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800';
+
+        return `
+          <button 
+            onclick="setCategory('${cat}')" 
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${activeClass}">
+            ${cat}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      isEmergencyFilterActive = false;
+      updateEmergencyBtnUI();
+      renderCategories();
+      renderProtocols();
+    }
+
+    function filterEmergencyOnly() {
+      isEmergencyFilterActive = !isEmergencyFilterActive;
+      updateEmergencyBtnUI();
+      renderProtocols();
+    }
+
+    function updateEmergencyBtnUI() {
+      const btn = document.getElementById('btn-emergency-filter');
+      if (!btn) return;
+      if (isEmergencyFilterActive) {
+        btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+        btn.classList.add('bg-red-800', 'ring-2', 'ring-red-400');
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> Filtrando Emergências`;
+      } else {
+        btn.classList.remove('bg-red-800', 'ring-2', 'ring-red-400');
+        btn.classList.add('bg-red-600', 'hover:bg-red-700');
+        btn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Filtrar Emergências`;
+      }
+      lucide.createIcons();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val.trim().toLowerCase();
+      renderProtocols();
+    }
+
+    function resetFilters() {
+      currentCategory = 'Todas';
+      searchQuery = '';
+      isEmergencyFilterActive = false;
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
+      updateEmergencyBtnUI();
+      renderCategories();
+      renderProtocols();
+    }
+
+    function renderProtocols() {
+      const container = document.getElementById('protocols-grid');
+      const initialEmptyState = document.getElementById('initial-empty-state');
+      const searchEmptyState = document.getElementById('search-empty-state');
+      const counter = document.getElementById('protocol-counter');
+      const searchFilterSection = document.getElementById('search-filter-section');
+      const emergencyBanner = document.getElementById('emergency-banner');
+
+      // Se não há nenhum protocolo no sistema
+      if (protocols.length === 0) {
+        container.innerHTML = '';
+        counter.textContent = '0 protocolos';
+        initialEmptyState.classList.remove('hidden');
+        searchEmptyState.classList.add('hidden');
+        emergencyBanner.classList.add('hidden');
+        searchFilterSection.classList.add('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      initialEmptyState.classList.add('hidden');
+      searchFilterSection.classList.remove('hidden');
+
+      const hasEmergency = protocols.some(p => p.isEmergency);
+      if (hasEmergency) {
+        emergencyBanner.classList.remove('hidden');
+      } else {
+        emergencyBanner.classList.add('hidden');
+      }
+
+      const filtered = protocols.filter(p => {
+        if (isEmergencyFilterActive && !p.isEmergency) return false;
+
+        if (currentCategory === 'Favoritos ⭐') {
+          if (!favorites.includes(p.id)) return false;
+        } else if (currentCategory !== 'Todas') {
+          if (p.category !== currentCategory) return false;
+        }
+
+        if (searchQuery) {
+          const matchTitle = p.title && p.title.toLowerCase().includes(searchQuery);
+          const matchDesc = p.description && p.description.toLowerCase().includes(searchQuery);
+          const matchCat = p.category && p.category.toLowerCase().includes(searchQuery);
+          const matchTags = p.tags && p.tags.some(t => t.toLowerCase().includes(searchQuery));
+          if (!matchTitle && !matchDesc && !matchCat && !matchTags) return false;
+        }
+
+        return true;
+      });
+
+      counter.textContent = `${filtered.length} protocolo${filtered.length !== 1 ? 's' : ''}`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        searchEmptyState.classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      searchEmptyState.classList.add('hidden');
+
+      container.innerHTML = filtered.map(p => {
+        const isFav = favorites.includes(p.id);
+        const emergencyBadge = p.isEmergency 
+          ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-400 border border-red-200 dark:border-red-800">
+               <i data-lucide="zap" class="w-3 h-3"></i> Emergência
+             </span>`
+          : '';
+
+        return `
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-sm hover:shadow-md hover:border-sky-300 dark:hover:border-sky-800 transition-all flex flex-col justify-between group">
+            <div>
+              <!-- Cabeçalho do Card: Categoria, Badges, Editar, Excluir e Favorito -->
+              <div class="flex items-start justify-between gap-2 mb-3">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                    ${p.category || 'Geral'}
+                  </span>
+                  ${p.type ? `<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono">${p.type}</span>` : ''}
+                  ${emergencyBadge}
+                </div>
+                
+                <div class="flex items-center gap-1">
+                  <!-- Botão Editar -->
+                  <button onclick="editProtocol('${p.id}')" title="Editar protocolo" class="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 p-1 transition">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                  </button>
+                  <!-- Botão Excluir -->
+                  <button onclick="deleteProtocol('${p.id}')" title="Excluir protocolo" class="text-slate-400 hover:text-red-600 p-1 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                  <!-- Botão Favorito -->
+                  <button onclick="toggleFavorite('${p.id}')" title="Favoritar" class="text-slate-300 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400 p-1 transition">
+                    <i data-lucide="star" class="w-4 h-4 ${isFav ? 'text-amber-400 fill-amber-400' : ''}"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Título (Clicável para visualizar com botão voltar) -->
+              <h4 onclick="openViewer('${p.id}')" class="text-base font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors line-clamp-2 mb-2 cursor-pointer">
+                ${p.title}
+              </h4>
+
+              <!-- Descrição -->
+              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3">
+                ${p.description || 'Sem descrição cadastrada.'}
+              </p>
+
+              <!-- Tags -->
+              ${p.tags && p.tags.length > 0 ? `
+                <div class="flex flex-wrap gap-1 mb-4">
+                  ${p.tags.map(tag => `
+                    <button onclick="handleSearch('${tag}'); document.getElementById('search-input').value = '${tag}';" class="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 hover:bg-sky-100 hover:text-sky-700 dark:bg-slate-800 dark:hover:bg-slate-700 px-2 py-0.5 rounded-md transition">
+                      #${tag}
+                    </button>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Rodapé do Card: Versão e Ações -->
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                ${p.version ? p.version : 'Vigente'}
+              </span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="copyProtocolLink('${p.url}')" title="Copiar Link" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
+                <a href="${p.url}" target="_blank" rel="noopener noreferrer" title="Abrir em Nova Aba" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+                  <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
+                <!-- BOTÃO PRINCIPAL: VISUALIZAR COM BOTÃO VOLTAR -->
+                <button onclick="openViewer('${p.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-sm">
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                  <span>Visualizar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function toggleFavorite(id) {
+      if (favorites.includes(id)) {
+        favorites = favorites.filter(favId => favId !== id);
+        showToast('Removido dos favoritos');
+      } else {
+        favorites.push(id);
+        showToast('Adicionado aos favoritos ⭐');
+      }
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+      renderCategories();
+      renderProtocols();
+    }
+
+    function copyProtocolLink(url) {
+      if (!url || url === '#') {
+        showToast('Link em configuração ou não informado', 'warning');
+        return;
+      }
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copiado com sucesso!');
+      }).catch(() => {
+        showToast('Erro ao copiar link', 'error');
+      });
+    }
+
+    // Modal de Adição / Edição
+    function openModal() {
+      document.getElementById('protocol-form').reset();
+      document.getElementById('editing-id').value = '';
+      document.getElementById('modal-title').textContent = 'Novo Protocolo Clínico';
+      document.getElementById('form-custom-category').classList.add('hidden');
+      document.getElementById('protocol-modal').classList.remove('hidden');
+      document.getElementById('form-title').focus();
+      lucide.createIcons();
+    }
+
+    function editProtocol(id) {
+      const p = protocols.find(item => item.id === id);
+      if (!p) return;
+
+      document.getElementById('editing-id').value = p.id;
+      document.getElementById('modal-title').textContent = 'Editar Protocolo';
+      document.getElementById('form-title').value = p.title || '';
+      
+      const categorySelect = document.getElementById('form-category');
+      const customCategoryInput = document.getElementById('form-custom-category');
+      
+      let matched = false;
+      for (let i = 0; i < categorySelect.options.length; i++) {
+        if (categorySelect.options[i].value === p.category) {
+          categorySelect.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched && p.category) {
+        categorySelect.value = '__NEW__';
+        customCategoryInput.classList.remove('hidden');
+        customCategoryInput.value = p.category;
+      } else {
+        customCategoryInput.classList.add('hidden');
+      }
+
+      document.getElementById('form-type').value = p.type || 'PDF';
+      document.getElementById('form-url').value = p.url || '';
+      document.getElementById('form-version').value = p.version || '';
+      document.getElementById('form-emergency').checked = !!p.isEmergency;
+      document.getElementById('form-description').value = p.description || '';
+      document.getElementById('form-tags').value = (p.tags || []).join(', ');
+
+      document.getElementById('protocol-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      document.getElementById('protocol-modal').classList.add('hidden');
+    }
+
+    function saveProtocol(event) {
+      event.preventDefault();
+      const editingId = document.getElementById('editing-id').value;
+      const title = document.getElementById('form-title').value.trim();
+      let category = document.getElementById('form-category').value;
+      
+      if (category === '__NEW__') {
+        category = document.getElementById('form-custom-category').value.trim() || 'Geral';
+      }
+
+      const type = document.getElementById('form-type').value;
+      const url = document.getElementById('form-url').value.trim();
+      const version = document.getElementById('form-version').value.trim() || 'v1.0';
+      const isEmergency = document.getElementById('form-emergency').checked;
+      const description = document.getElementById('form-description').value.trim();
+      const tagsInput = document.getElementById('form-tags').value.trim();
+      const tags = tagsInput ? tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+
+      if (editingId) {
+        // Atualizar protocolo existente
+        const index = protocols.findIndex(p => p.id === editingId);
+        if (index !== -1) {
+          protocols[index] = {
+            ...protocols[index],
+            title,
+            category,
+            type,
+            url,
+            version,
+            isEmergency,
+            description,
+            tags
+          };
+          showToast('Protocolo atualizado com sucesso!');
+        }
+      } else {
+        // Inserir novo protocolo
+        const newProto = {
+          id: 'proto-' + Date.now(),
+          title,
+          category,
+          type,
+          url,
+          version,
+          isEmergency,
+          description,
+          tags
+        };
+        protocols.unshift(newProto);
+        showToast('Protocolo cadastrado com sucesso!');
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(protocols));
+      closeModal();
+      renderCategories();
+      renderProtocols();
+    }
+
+    function deleteProtocol(id) {
+      if (confirm('Tem certeza que deseja remover este protocolo?')) {
+        protocols = protocols.filter(p => p.id !== id);
+        favorites = favorites.filter(favId => favId !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(protocols));
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+        renderCategories();
+        renderProtocols();
+        showToast('Protocolo excluído.');
+      }
+    }
+
+    function clearAllProtocols() {
+      if (confirm('ATENÇÃO: Deseja apagar todos os protocolos e deixar o site totalmente em branco?')) {
+        protocols = [];
+        favorites = [];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify([]));
+        closeExportModal();
+        renderCategories();
+        renderProtocols();
+        showToast('Todos os protocolos foram removidos.');
+      }
+    }
+
+    function exportDataModal() {
+      const code = `// Arquivo de dados dos Protocolos da sua UTI\nconst INITIAL_PROTOCOLS = ${JSON.stringify(protocols, null, 2)};`;
+      document.getElementById('export-textarea').value = code;
+      document.getElementById('export-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeExportModal() {
+      document.getElementById('export-modal').classList.add('hidden');
+    }
+
+    function copyExportCode() {
+      const txt = document.getElementById('export-textarea');
+      txt.select();
+      navigator.clipboard.writeText(txt.value).then(() => {
+        showToast('Código copiado! Cole no seu data.js');
+      });
+    }
+
+    function downloadDataJs() {
+      const code = `// Arquivo de dados dos Protocolos da sua UTI\nconst INITIAL_PROTOCOLS = ${JSON.stringify(protocols, null, 2)};`;
+      const blob = new Blob([code], { type: 'application/javascript;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'data.js';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Download do data.js iniciado!');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgColor = type === 'error' ? 'bg-red-600' : type === 'warning' ? 'bg-amber-600' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900';
+      
+      toast.className = `flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold ${bgColor} transition-all duration-300 transform translate-y-2 opacity-0`;
+      toast.innerHTML = `<span>${message}</span>`;
+      
+      container.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
