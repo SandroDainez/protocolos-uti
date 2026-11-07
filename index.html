@@ -138,6 +138,12 @@
             <span>Adicionar Protocolo</span>
           </button>
 
+          <!-- Botão Publicar no GitHub (Apenas Admin) -->
+          <button id="btn-sync-github" onclick="syncWithGitHub()" title="Publicar protocolos no GitHub para todos verem" class="hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-emerald-800 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 hover:bg-emerald-200 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 active:scale-95 transition shadow-sm">
+            <i id="btn-sync-github-icon" data-lucide="cloud-upload" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+            <span id="btn-sync-github-text">Publicar no GitHub</span>
+          </button>
+
           <!-- Gerenciar / Backup de Dados (Apenas Admin) -->
           <button id="btn-export-data" onclick="exportDataModal()" title="Salvar / Fazer Backup do data.js" class="hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
             <i data-lucide="save" class="w-5 h-5"></i>
@@ -357,22 +363,36 @@
         </button>
       </div>
       <div class="p-6 space-y-5 overflow-y-auto">
-        <!-- Aviso sobre publicação permanente -->
-        <div class="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-xs text-sky-900 dark:text-sky-200 leading-relaxed">
-          <p class="font-bold flex items-center gap-1.5 mb-1.5 text-sky-800 dark:text-sky-300">
-            <i data-lucide="info" class="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400"></i>
-            Como publicar as alterações para toda a equipe da UTI:
+        <!-- NOVO: Publicação Direta com 1 Clique no GitHub -->
+        <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-300 dark:border-emerald-800 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="cloud-upload" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+              <h4 class="text-sm font-bold text-emerald-950 dark:text-emerald-200">Publicação Direta no GitHub (1 Clique)</h4>
+            </div>
+            <span id="github-status-badge" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+              Pronto para envio
+            </span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Ao clicar no botão abaixo, os protocolos da tela são salvos no repositório GitHub sem você precisar baixar nenhum arquivo! Em 1 minuto o site oficial é atualizado para toda a UTI.
           </p>
-          <ol class="list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
-            <li>Sempre que você adicionar ou editar protocolos aqui, clique em <strong>"Baixar data.js"</strong> abaixo.</li>
-            <li>Substitua o arquivo <code class="px-1 py-0.5 rounded bg-sky-100 dark:bg-sky-900 font-mono">data.js</code> na pasta do projeto e envie para o GitHub.</li>
-            <li>Pronto! Qualquer profissional que abrir o link oficial verá a lista atualizada em <strong>modo somente leitura</strong>.</li>
-          </ol>
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <button onclick="syncWithGitHub()" id="btn-modal-sync-github" class="px-4 py-2 text-xs font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition shadow-sm flex items-center gap-1.5">
+              <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+              <span>Enviar e Publicar no GitHub Agora</span>
+            </button>
+            <button onclick="openGitHubTokenModal()" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+              <i data-lucide="key" class="w-3.5 h-3.5"></i>
+              <span id="btn-token-config-label">Configurar Token GitHub</span>
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Código atualizado para o data.js:</label>
-          <textarea id="export-textarea" rows="7" readonly class="w-full font-mono text-xs p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-all"></textarea>
+        <!-- Método alternativo manual -->
+        <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ou baixe o arquivo data.js manualmente:</label>
+          <textarea id="export-textarea" rows="4" readonly class="w-full font-mono text-xs p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-all"></textarea>
         </div>
         
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
@@ -406,6 +426,78 @@
           <p class="text-[11px] text-slate-400 mt-1.5">
             Senha padrão de fábrica: <code class="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sky-600 font-mono">adminuti</code>
           </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAR TOKEN GITHUB -->
+  <div id="github-token-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 sm:p-6">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 my-auto overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Conectar Publicação com o GitHub</h3>
+            <p class="text-[11px] text-slate-400">Repositório: SandroDainez/protocolos-uti</p>
+          </div>
+        </div>
+        <button onclick="closeGitHubTokenModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-2">
+          <p class="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-sky-500"></i>
+            Como gerar seu token do GitHub em 3 passos rápidos:
+          </p>
+          <ol class="list-decimal list-inside space-y-1.5 text-[11px] leading-relaxed">
+            <li>Abra o link direto: <a href="https://github.com/settings/tokens/new?scopes=repo&description=Portal%20Protocolos%20UTI" target="_blank" class="text-sky-600 dark:text-sky-400 underline font-semibold">Criar Token no GitHub ↗</a> (já configurado com a permissão necessária).</li>
+            <li>Role até o final da página do GitHub e clique no botão verde <strong>"Generate token"</strong>.</li>
+            <li>Copie o código gerado (começa com <code>ghp_...</code>) e cole no campo abaixo:</li>
+          </ol>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cole seu GitHub Personal Access Token:</label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="github-token-input" 
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
+              class="w-full pl-3 pr-10 py-2.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility('github-token-input', 'toggle-token-icon')" 
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            >
+              <i id="toggle-token-icon" data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+            Segurança: O token fica salvo com segurança apenas no seu navegador. Visitantes não têm acesso.
+          </p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+          <button type="button" onclick="removeGitHubToken()" id="btn-remove-token" class="text-xs text-red-500 hover:text-red-700 hover:underline">
+            Remover Token
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeGitHubTokenModal()" class="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+              Cancelar
+            </button>
+            <button type="button" onclick="saveGitHubToken()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-sm flex items-center gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              Salvar e Conectar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -503,6 +595,12 @@
     // Hash SHA-256 da senha padrão: 'adminuti'
     const DEFAULT_ADMIN_HASH = 'a9cd5c0f1cf4618eee290181cd75cc9eb098af210ddbbcf661b73575a91a4f61';
 
+    // Configurações do Repositório GitHub
+    const GITHUB_REPO_OWNER = 'SandroDainez';
+    const GITHUB_REPO_NAME = 'protocolos-uti';
+    const GITHUB_FILE_PATH = 'data.js';
+    const GITHUB_TOKEN_KEY = 'uti_github_token';
+
     // Limpar o storage legado das amostras se existia
     localStorage.removeItem('uti_protocols_data_v1');
 
@@ -548,6 +646,11 @@
           const viewer = document.getElementById('protocol-viewer');
           if (viewer && !viewer.classList.contains('hidden')) {
             closeViewer();
+            return;
+          }
+          const ghModal = document.getElementById('github-token-modal');
+          if (ghModal && !ghModal.classList.contains('hidden')) {
+            closeGitHubTokenModal();
             return;
           }
           const adminModal = document.getElementById('admin-login-modal');
@@ -624,6 +727,7 @@
 
     function updateAdminUI() {
       const btnAdd = document.getElementById('btn-add-protocol');
+      const btnSyncGh = document.getElementById('btn-sync-github');
       const btnExport = document.getElementById('btn-export-data');
       const adminBadge = document.getElementById('admin-badge');
       const btnAdminLoginTop = document.getElementById('btn-admin-login-top');
@@ -633,9 +737,26 @@
       const emptyVisitorMsg = document.getElementById('empty-state-visitor-msg');
       const emptyTitle = document.getElementById('empty-state-title');
       const emptyDesc = document.getElementById('empty-state-desc');
+      const ghStatusBadge = document.getElementById('github-status-badge');
+      const btnTokenConfigLabel = document.getElementById('btn-token-config-label');
+
+      const hasGhToken = !!localStorage.getItem(GITHUB_TOKEN_KEY);
+      if (ghStatusBadge) {
+        if (hasGhToken) {
+          ghStatusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
+          ghStatusBadge.textContent = 'Token Conectado';
+        } else {
+          ghStatusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+          ghStatusBadge.textContent = 'Token Pendente';
+        }
+      }
+      if (btnTokenConfigLabel) {
+        btnTokenConfigLabel.textContent = hasGhToken ? 'Alterar Token GitHub' : 'Configurar Token GitHub';
+      }
 
       if (isAdmin) {
         if (btnAdd) btnAdd.classList.remove('hidden');
+        if (btnSyncGh) btnSyncGh.classList.remove('hidden');
         if (btnExport) btnExport.classList.remove('hidden');
         if (adminBadge) adminBadge.classList.remove('hidden');
         if (btnAdminLoginTop) btnAdminLoginTop.classList.add('hidden');
@@ -647,6 +768,7 @@
         if (emptyDesc) emptyDesc.textContent = 'Nenhum protocolo cadastrado ainda. Clique no botão abaixo para adicionar os protocolos clínicos da sua UTI.';
       } else {
         if (btnAdd) btnAdd.classList.add('hidden');
+        if (btnSyncGh) btnSyncGh.classList.add('hidden');
         if (btnExport) btnExport.classList.add('hidden');
         if (adminBadge) adminBadge.classList.add('hidden');
         if (btnAdminLoginTop) btnAdminLoginTop.classList.remove('hidden');
@@ -1078,6 +1200,146 @@
         if (icon) icon.setAttribute('data-lucide', 'eye');
       }
       lucide.createIcons();
+    }
+
+    // Funções de Conexão e Publicação Direta no GitHub
+    function openGitHubTokenModal() {
+      const modal = document.getElementById('github-token-modal');
+      const input = document.getElementById('github-token-input');
+      const savedToken = localStorage.getItem(GITHUB_TOKEN_KEY) || '';
+      input.value = savedToken;
+      modal.classList.remove('hidden');
+      setTimeout(() => input.focus(), 100);
+      lucide.createIcons();
+    }
+
+    function closeGitHubTokenModal() {
+      document.getElementById('github-token-modal').classList.add('hidden');
+    }
+
+    function saveGitHubToken() {
+      const input = document.getElementById('github-token-input');
+      const token = input.value.trim();
+      if (!token) {
+        showToast('Por favor, informe um token válido do GitHub.', 'warning');
+        return;
+      }
+      localStorage.setItem(GITHUB_TOKEN_KEY, token);
+      closeGitHubTokenModal();
+      showToast('Token do GitHub salvo com sucesso!', 'success');
+      updateAdminUI();
+      syncWithGitHub();
+    }
+
+    function removeGitHubToken() {
+      if (confirm('Deseja remover o token do GitHub salvo neste navegador?')) {
+        localStorage.removeItem(GITHUB_TOKEN_KEY);
+        document.getElementById('github-token-input').value = '';
+        closeGitHubTokenModal();
+        updateAdminUI();
+        showToast('Token do GitHub removido.');
+      }
+    }
+
+    function utf8ToBase64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode(parseInt(p1, 16));
+      }));
+    }
+
+    async function syncWithGitHub() {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
+
+      const token = localStorage.getItem(GITHUB_TOKEN_KEY);
+      if (!token) {
+        openGitHubTokenModal();
+        return;
+      }
+
+      const btnTop = document.getElementById('btn-sync-github');
+      const btnText = document.getElementById('btn-sync-github-text');
+      const btnModal = document.getElementById('btn-modal-sync-github');
+
+      const originalText = btnText ? btnText.textContent : 'Publicar no GitHub';
+      if (btnText) btnText.textContent = 'Enviando...';
+      if (btnTop) btnTop.disabled = true;
+      if (btnModal) {
+        btnModal.disabled = true;
+        btnModal.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Publicando no GitHub...</span>`;
+      }
+      lucide.createIcons();
+
+      try {
+        const getUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+        const getRes = await fetch(getUrl, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        let currentSha = null;
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          currentSha = fileData.sha;
+        } else if (getRes.status === 401 || getRes.status === 403) {
+          throw new Error('TOKEN_INVALID');
+        }
+
+        const newCode = `// Arquivo de dados dos Protocolos da sua UTI\nconst INITIAL_PROTOCOLS = ${JSON.stringify(protocols, null, 2)};\n`;
+        const base64Content = utf8ToBase64(newCode);
+
+        const putPayload = {
+          message: 'Atualiza protocolos via painel web [Admin]',
+          content: base64Content,
+          branch: 'main'
+        };
+        if (currentSha) {
+          putPayload.sha = currentSha;
+        }
+
+        const putRes = await fetch(getUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(putPayload)
+        });
+
+        if (!putRes.ok) {
+          const errData = await putRes.json().catch(() => ({}));
+          if (putRes.status === 401 || putRes.status === 403) {
+            throw new Error('TOKEN_INVALID');
+          }
+          throw new Error(errData.message || 'Falha ao atualizar no GitHub');
+        }
+
+        showToast('🚀 Protocolos publicados com sucesso no GitHub!', 'success');
+        if (typeof closeExportModal === 'function') {
+          closeExportModal();
+        }
+      } catch (err) {
+        console.error('Erro ao sincronizar com GitHub:', err);
+        if (err.message === 'TOKEN_INVALID') {
+          showToast('Token do GitHub inválido ou sem permissão repo. Configure novamente.', 'error');
+          openGitHubTokenModal();
+        } else {
+          showToast('Erro ao publicar no GitHub: ' + err.message, 'error');
+        }
+      } finally {
+        if (btnText) btnText.textContent = originalText;
+        if (btnTop) btnTop.disabled = false;
+        if (btnModal) {
+          btnModal.disabled = false;
+          btnModal.innerHTML = `<i data-lucide="cloud-upload" class="w-4 h-4"></i><span>Enviar e Publicar no GitHub Agora</span>`;
+        }
+        lucide.createIcons();
+      }
     }
 
     // Modal de Adição / Edição

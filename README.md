@@ -30,12 +30,16 @@ Um portal web moderno, rápido, responsivo e limpo para centralizar e organizar 
    - Adicione seus próprios links (Google Drive, intranet hospitalar, OneDrive, PDFs).
    - Crie as categorias que desejar (+ Criar Nova Categoria...).
 
-5. **Busca Instantânea em Tempo Real**:
+5. **Publicação Direta no GitHub (1 Clique)**:
+   - Botão **`Publicar no GitHub`** direto no topo para o Administrador.
+   - Sincroniza e atualiza o arquivo `data.js` do repositório automaticamente pela API do GitHub, sem precisar baixar arquivos manualmente.
+
+6. **Busca Instantânea em Tempo Real**:
    - Filtra por nome, patologia, drogas ou tags.
    - Pressione `/` no teclado em qualquer tela para focar na busca.
 
-6. **Favoritos do Plantão (⭐)**:
+7. **Favoritos do Plantão (⭐)**:
    - Fixe os protocolos mais consultados no posto de UTI.
 
-7. **Modo Escuro / Noturno**:
+8. **Modo Escuro / Noturno**:
    - Conforto visual para plantões noturnos com 1 clique.
