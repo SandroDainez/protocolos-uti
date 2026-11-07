@@ -123,20 +123,34 @@
 
         <!-- Ações do Topo -->
         <div class="flex items-center gap-2 sm:gap-3">
-          <!-- Botão Adicionar -->
-          <button onclick="openModal()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-sm">
+          <!-- Badge de Modo Administrador Ativo (Apenas Admin) -->
+          <div id="admin-badge" class="hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-sm">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+            <span>Admin</span>
+            <button onclick="logoutAdmin()" title="Sair do Modo Administrador" class="ml-1 text-[11px] underline hover:text-emerald-900 dark:hover:text-emerald-100">
+              Sair
+            </button>
+          </div>
+
+          <!-- Botão Adicionar (Apenas Admin) -->
+          <button id="btn-add-protocol" onclick="openModal()" class="hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Adicionar Protocolo</span>
           </button>
 
-          <!-- Gerenciar / Backup de Dados -->
-          <button onclick="exportDataModal()" title="Salvar / Fazer Backup do data.js" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+          <!-- Gerenciar / Backup de Dados (Apenas Admin) -->
+          <button id="btn-export-data" onclick="exportDataModal()" title="Salvar / Fazer Backup do data.js" class="hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
             <i data-lucide="save" class="w-5 h-5"></i>
           </button>
 
           <!-- Alternador de Tema Escuro / Claro -->
           <button id="theme-toggle" onclick="toggleTheme()" title="Alternar Modo Escuro (Plantão Noturno)" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
             <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+          </button>
+
+          <!-- Botão de Acesso do Administrador no Topo -->
+          <button id="btn-admin-login-top" onclick="openAdminModal()" title="Acesso do Administrador (Atalho: Ctrl+Shift+A)" class="p-2 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+            <i data-lucide="lock" class="w-5 h-5"></i>
           </button>
         </div>
       </div>
@@ -202,15 +216,22 @@
       <div class="w-16 h-16 mx-auto mb-4 bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 rounded-2xl flex items-center justify-center">
         <i data-lucide="clipboard-list" class="w-8 h-8"></i>
       </div>
-      <h3 class="text-xl font-bold text-slate-900 dark:text-white">Seu portal está livre e pronto!</h3>
-      <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-        Todos os protocolos de exemplo foram removidos. Agora você pode adicionar os protocolos reais da sua UTI. Cada um deles terá o mesmo padrão visual, com opção de visualizar direto no site e botão fácil de retornar.
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white" id="empty-state-title">Portal de Protocolos Clínicos</h3>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed" id="empty-state-desc">
+        Nenhum protocolo cadastrado no momento.
       </p>
-      <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+      
+      <!-- Ação apenas para o Administrador -->
+      <div id="empty-state-admin-actions" class="hidden mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
         <button onclick="openModal()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-xl text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-md shadow-sky-500/20">
           <i data-lucide="plus-circle" class="w-5 h-5"></i>
           Cadastrar Meu Primeiro Protocolo
         </button>
+      </div>
+
+      <!-- Informação para Visitantes -->
+      <div id="empty-state-visitor-msg" class="mt-4 text-xs text-slate-400 dark:text-slate-500">
+        Consulte a coordenação médica para a publicação dos protocolos da UTI.
       </div>
     </div>
 
@@ -329,17 +350,30 @@
       <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2">
           <i data-lucide="database" class="w-5 h-5 text-sky-600 dark:text-sky-400"></i>
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Salvar Protocolos no Arquivo (data.js)</h3>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Gerenciador de Protocolos & Publicação</h3>
         </div>
         <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-      <div class="p-6 space-y-4 overflow-y-auto">
-        <p class="text-xs text-slate-600 dark:text-slate-300">
-          Seus protocolos já estão salvos neste navegador. Para torná-los permanentes em outros computadores ou na rede da UTI, você pode baixar o arquivo <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sky-600 font-mono">data.js</code> atualizado ou copiar o código abaixo:
-        </p>
-        <textarea id="export-textarea" rows="10" readonly class="w-full font-mono text-xs p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-all"></textarea>
+      <div class="p-6 space-y-5 overflow-y-auto">
+        <!-- Aviso sobre publicação permanente -->
+        <div class="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-xs text-sky-900 dark:text-sky-200 leading-relaxed">
+          <p class="font-bold flex items-center gap-1.5 mb-1.5 text-sky-800 dark:text-sky-300">
+            <i data-lucide="info" class="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400"></i>
+            Como publicar as alterações para toda a equipe da UTI:
+          </p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
+            <li>Sempre que você adicionar ou editar protocolos aqui, clique em <strong>"Baixar data.js"</strong> abaixo.</li>
+            <li>Substitua o arquivo <code class="px-1 py-0.5 rounded bg-sky-100 dark:bg-sky-900 font-mono">data.js</code> na pasta do projeto e envie para o GitHub.</li>
+            <li>Pronto! Qualquer profissional que abrir o link oficial verá a lista atualizada em <strong>modo somente leitura</strong>.</li>
+          </ol>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Código atualizado para o data.js:</label>
+          <textarea id="export-textarea" rows="7" readonly class="w-full font-mono text-xs p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 select-all"></textarea>
+        </div>
         
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
           <button onclick="clearAllProtocols()" class="text-xs text-red-500 hover:text-red-700 hover:underline">
@@ -356,7 +390,85 @@
             </button>
           </div>
         </div>
+
+        <!-- Seção de alteração de senha de administrador -->
+        <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <i data-lucide="key" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+            Alterar Senha do Administrador
+          </h4>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="password" id="new-admin-password" placeholder="Digite uma nova senha..." class="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <button type="button" onclick="changeAdminPassword()" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+              Salvar Nova Senha
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5">
+            Senha padrão de fábrica: <code class="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sky-600 font-mono">adminuti</code>
+          </p>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN DO ADMINISTRADOR -->
+  <div id="admin-login-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 sm:p-6">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 my-auto overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+            <i data-lucide="lock" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Acesso do Administrador</h3>
+            <p class="text-[11px] text-slate-400">Exclusivo para coordenador/editor dos protocolos</p>
+          </div>
+        </div>
+        <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="p-6 space-y-4">
+        <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          Digite a senha de administrador para liberar os botões de adicionar, editar e excluir protocolos.
+        </p>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Senha de Acesso</label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="admin-password-input" 
+              required 
+              placeholder="Digite a senha..."
+              autocomplete="current-password"
+              class="w-full pl-3 pr-10 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+            >
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility('admin-password-input', 'toggle-pass-icon')" 
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            >
+              <i id="toggle-pass-icon" data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p id="admin-login-error" class="hidden mt-2 text-xs text-red-500 font-medium flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+            Senha incorreta. Tente novamente.
+          </p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition shadow-sm flex items-center gap-1.5">
+            <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+            Desbloquear Modo Edição
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -367,8 +479,13 @@
         <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
         <span>Portal de Protocolos Clínicos - Unidade de Terapia Intensiva</span>
       </div>
-      <div>
+      <div class="flex items-center gap-4">
         <span>Uso interno institucional</span>
+        <span class="text-slate-300 dark:text-slate-700">•</span>
+        <button id="footer-admin-btn" onclick="toggleAdminFromFooter()" class="hover:text-sky-600 dark:hover:text-sky-400 transition flex items-center gap-1.5 font-medium">
+          <i id="footer-admin-icon" data-lucide="lock" class="w-3.5 h-3.5"></i>
+          <span id="footer-admin-label">Área do Administrador</span>
+        </button>
       </div>
     </div>
   </footer>
@@ -381,16 +498,28 @@
     const STORAGE_KEY = 'uti_protocols_data_custom_v2';
     const FAVORITES_KEY = 'uti_protocols_favorites_v2';
     const THEME_KEY = 'uti_theme_preference';
+    const ADMIN_AUTH_KEY = 'uti_admin_authenticated';
+    const ADMIN_HASH_KEY = 'uti_custom_admin_hash';
+    // Hash SHA-256 da senha padrão: 'adminuti'
+    const DEFAULT_ADMIN_HASH = 'a9cd5c0f1cf4618eee290181cd75cc9eb098af210ddbbcf661b73575a91a4f61';
 
     // Limpar o storage legado das amostras se existia
     localStorage.removeItem('uti_protocols_data_v1');
 
+    let isAdmin = localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
     let protocols = [];
     let favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
     let currentCategory = 'Todas';
     let searchQuery = '';
     let isEmergencyFilterActive = false;
     let currentViewingProtocol = null;
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     function init() {
       // Tema Dark/Light
@@ -404,28 +533,26 @@
       }
 
       // Carregar dados salvos ou do data.js
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      if (savedData) {
-        try {
-          protocols = JSON.parse(savedData);
-        } catch (e) {
-          protocols = typeof INITIAL_PROTOCOLS !== 'undefined' ? [...INITIAL_PROTOCOLS] : [];
-        }
-      } else {
-        protocols = typeof INITIAL_PROTOCOLS !== 'undefined' ? [...INITIAL_PROTOCOLS] : [];
-      }
+      loadProtocolsData();
 
+      // Sincronizar interface com permissão de Administrador
+      updateAdminUI();
       renderCategories();
       renderProtocols();
       lucide.createIcons();
 
       // Atalhos de teclado
       window.addEventListener('keydown', (e) => {
-        // Fechar visualizador com Esc
+        // Fechar com Esc
         if (e.key === 'Escape') {
           const viewer = document.getElementById('protocol-viewer');
           if (viewer && !viewer.classList.contains('hidden')) {
             closeViewer();
+            return;
+          }
+          const adminModal = document.getElementById('admin-login-modal');
+          if (adminModal && !adminModal.classList.contains('hidden')) {
+            closeAdminModal();
             return;
           }
           const modal = document.getElementById('protocol-modal');
@@ -433,6 +560,24 @@
             closeModal();
             return;
           }
+          const expModal = document.getElementById('export-modal');
+          if (expModal && !expModal.classList.contains('hidden')) {
+            closeExportModal();
+            return;
+          }
+        }
+
+        // Atalho secreto do Administrador: Ctrl+Shift+A ou Cmd+Shift+A
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+          e.preventDefault();
+          if (isAdmin) {
+            if (confirm('Deseja sair do Modo Administrador?')) {
+              logoutAdmin();
+            }
+          } else {
+            openAdminModal();
+          }
+          return;
         }
 
         // Atalho de busca '/'
@@ -450,6 +595,71 @@
           closeViewer(false);
         }
       });
+    }
+
+    function loadProtocolsData() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      const hasInitial = typeof INITIAL_PROTOCOLS !== 'undefined' && Array.isArray(INITIAL_PROTOCOLS) && INITIAL_PROTOCOLS.length > 0;
+
+      if (!isAdmin && hasInitial) {
+        // Quem não é admin sempre vê a lista oficial publicada no data.js
+        protocols = [...INITIAL_PROTOCOLS];
+      } else if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            protocols = parsed;
+          } else if (hasInitial) {
+            protocols = [...INITIAL_PROTOCOLS];
+          } else {
+            protocols = [];
+          }
+        } catch (e) {
+          protocols = hasInitial ? [...INITIAL_PROTOCOLS] : [];
+        }
+      } else {
+        protocols = hasInitial ? [...INITIAL_PROTOCOLS] : [];
+      }
+    }
+
+    function updateAdminUI() {
+      const btnAdd = document.getElementById('btn-add-protocol');
+      const btnExport = document.getElementById('btn-export-data');
+      const adminBadge = document.getElementById('admin-badge');
+      const btnAdminLoginTop = document.getElementById('btn-admin-login-top');
+      const footerLabel = document.getElementById('footer-admin-label');
+      const footerIcon = document.getElementById('footer-admin-icon');
+      const emptyAdminActions = document.getElementById('empty-state-admin-actions');
+      const emptyVisitorMsg = document.getElementById('empty-state-visitor-msg');
+      const emptyTitle = document.getElementById('empty-state-title');
+      const emptyDesc = document.getElementById('empty-state-desc');
+
+      if (isAdmin) {
+        if (btnAdd) btnAdd.classList.remove('hidden');
+        if (btnExport) btnExport.classList.remove('hidden');
+        if (adminBadge) adminBadge.classList.remove('hidden');
+        if (btnAdminLoginTop) btnAdminLoginTop.classList.add('hidden');
+        if (footerLabel) footerLabel.textContent = 'Modo Administrador (Sair)';
+        if (footerIcon) footerIcon.setAttribute('data-lucide', 'unlock');
+        if (emptyAdminActions) emptyAdminActions.classList.remove('hidden');
+        if (emptyVisitorMsg) emptyVisitorMsg.classList.add('hidden');
+        if (emptyTitle) emptyTitle.textContent = 'Modo Administrador Pronto!';
+        if (emptyDesc) emptyDesc.textContent = 'Nenhum protocolo cadastrado ainda. Clique no botão abaixo para adicionar os protocolos clínicos da sua UTI.';
+      } else {
+        if (btnAdd) btnAdd.classList.add('hidden');
+        if (btnExport) btnExport.classList.add('hidden');
+        if (adminBadge) adminBadge.classList.add('hidden');
+        if (btnAdminLoginTop) btnAdminLoginTop.classList.remove('hidden');
+        if (footerLabel) footerLabel.textContent = 'Área do Administrador';
+        if (footerIcon) footerIcon.setAttribute('data-lucide', 'lock');
+        if (emptyAdminActions) emptyAdminActions.classList.add('hidden');
+        if (emptyVisitorMsg) emptyVisitorMsg.classList.remove('hidden');
+        if (emptyTitle) emptyTitle.textContent = 'Portal de Protocolos Clínicos';
+        if (emptyDesc) emptyDesc.textContent = 'Nenhum protocolo disponível no momento. A equipe médica e coordenação estão atualizando o acervo.';
+      }
+
+      renderProtocols();
+      lucide.createIcons();
     }
 
     // ABRIR VISUALIZADOR DE PROTOCOLO (Com botão voltar integrado)
@@ -676,6 +886,17 @@
              </span>`
           : '';
 
+        const adminButtons = isAdmin ? `
+          <!-- Botão Editar (Apenas Administrador) -->
+          <button onclick="editProtocol('${p.id}')" title="Editar protocolo" class="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 p-1 transition">
+            <i data-lucide="pencil" class="w-4 h-4"></i>
+          </button>
+          <!-- Botão Excluir (Apenas Administrador) -->
+          <button onclick="deleteProtocol('${p.id}')" title="Excluir protocolo" class="text-slate-400 hover:text-red-600 p-1 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        ` : '';
+
         return `
           <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-sm hover:shadow-md hover:border-sky-300 dark:hover:border-sky-800 transition-all flex flex-col justify-between group">
             <div>
@@ -690,14 +911,7 @@
                 </div>
                 
                 <div class="flex items-center gap-1">
-                  <!-- Botão Editar -->
-                  <button onclick="editProtocol('${p.id}')" title="Editar protocolo" class="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 p-1 transition">
-                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                  </button>
-                  <!-- Botão Excluir -->
-                  <button onclick="deleteProtocol('${p.id}')" title="Excluir protocolo" class="text-slate-400 hover:text-red-600 p-1 transition">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                  </button>
+                  ${adminButtons}
                   <!-- Botão Favorito -->
                   <button onclick="toggleFavorite('${p.id}')" title="Favoritar" class="text-slate-300 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400 p-1 transition">
                     <i data-lucide="star" class="w-4 h-4 ${isFav ? 'text-amber-400 fill-amber-400' : ''}"></i>
@@ -778,8 +992,100 @@
       });
     }
 
+    // Funções de Autenticação do Administrador
+    function openAdminModal() {
+      const modal = document.getElementById('admin-login-modal');
+      const input = document.getElementById('admin-password-input');
+      const errorMsg = document.getElementById('admin-login-error');
+      if (input) input.value = '';
+      if (errorMsg) errorMsg.classList.add('hidden');
+      modal.classList.remove('hidden');
+      setTimeout(() => input && input.focus(), 100);
+      lucide.createIcons();
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-login-modal').classList.add('hidden');
+    }
+
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      const input = document.getElementById('admin-password-input');
+      const errorMsg = document.getElementById('admin-login-error');
+      const enteredPassword = input.value;
+      const enteredHash = await sha256(enteredPassword);
+      const targetHash = localStorage.getItem(ADMIN_HASH_KEY) || DEFAULT_ADMIN_HASH;
+
+      if (enteredHash === targetHash) {
+        isAdmin = true;
+        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+        closeAdminModal();
+        loadProtocolsData();
+        renderCategories();
+        updateAdminUI();
+        showToast('Modo Administrador liberado! Você já pode editar.', 'success');
+      } else {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+        input.select();
+        input.focus();
+      }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      localStorage.removeItem(ADMIN_AUTH_KEY);
+      loadProtocolsData();
+      renderCategories();
+      updateAdminUI();
+      showToast('Você saiu do Modo Administrador. A página está em Modo Leitura.');
+    }
+
+    function toggleAdminFromFooter() {
+      if (isAdmin) {
+        if (confirm('Deseja sair do Modo Administrador e voltar para o Modo Somente Leitura?')) {
+          logoutAdmin();
+        }
+      } else {
+        openAdminModal();
+      }
+    }
+
+    async function changeAdminPassword() {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
+      const newPass = document.getElementById('new-admin-password').value.trim();
+      if (!newPass || newPass.length < 4) {
+        showToast('A nova senha deve ter no mínimo 4 caracteres.', 'warning');
+        return;
+      }
+      const newHash = await sha256(newPass);
+      localStorage.setItem(ADMIN_HASH_KEY, newHash);
+      document.getElementById('new-admin-password').value = '';
+      showToast('Senha de administrador alterada com sucesso!');
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
+
     // Modal de Adição / Edição
     function openModal() {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
       document.getElementById('protocol-form').reset();
       document.getElementById('editing-id').value = '';
       document.getElementById('modal-title').textContent = 'Novo Protocolo Clínico';
@@ -790,6 +1096,10 @@
     }
 
     function editProtocol(id) {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
       const p = protocols.find(item => item.id === id);
       if (!p) return;
 
@@ -834,6 +1144,11 @@
 
     function saveProtocol(event) {
       event.preventDefault();
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
+
       const editingId = document.getElementById('editing-id').value;
       const title = document.getElementById('form-title').value.trim();
       let category = document.getElementById('form-category').value;
@@ -891,6 +1206,10 @@
     }
 
     function deleteProtocol(id) {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
       if (confirm('Tem certeza que deseja remover este protocolo?')) {
         protocols = protocols.filter(p => p.id !== id);
         favorites = favorites.filter(favId => favId !== id);
@@ -903,6 +1222,10 @@
     }
 
     function clearAllProtocols() {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
       if (confirm('ATENÇÃO: Deseja apagar todos os protocolos e deixar o site totalmente em branco?')) {
         protocols = [];
         favorites = [];
@@ -916,6 +1239,10 @@
     }
 
     function exportDataModal() {
+      if (!isAdmin) {
+        openAdminModal();
+        return;
+      }
       const code = `// Arquivo de dados dos Protocolos da sua UTI\nconst INITIAL_PROTOCOLS = ${JSON.stringify(protocols, null, 2)};`;
       document.getElementById('export-textarea').value = code;
       document.getElementById('export-modal').classList.remove('hidden');

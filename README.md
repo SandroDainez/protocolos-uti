@@ -18,18 +18,24 @@ Um portal web moderno, rápido, responsivo e limpo para centralizar e organizar 
    - Badge de destaque vermelho para **Emergências Críticas**.
    - Tags clicáveis para filtragem rápida.
    - Botão de **Copiar Link** direto.
-   - Botões de **Editar (✏️)** e **Excluir (🗑️)** em cada card.
+   - Botões de **Editar (✏️)** e **Excluir (🗑️)** visíveis **apenas para o Administrador**.
 
-3. **Cadastro Livre e Flexível**:
+3. **Segurança e Modo Somente Leitura (Público)**:
+   - Qualquer pessoa com o link entra por padrão em **Modo Somente Leitura**: não vê botões de cadastro, edição ou exclusão.
+   - Apenas o administrador autenticado com senha pode adicionar, editar ou excluir protocolos.
+   - Acesso protegido por criptografia SHA-256 e atalho rápido (`Ctrl+Shift+A`).
+   - Senha padrão inicial: `adminuti` (alterável diretamente no painel).
+
+4. **Cadastro Livre e Flexível (Modo Administrador)**:
    - Adicione seus próprios links (Google Drive, intranet hospitalar, OneDrive, PDFs).
    - Crie as categorias que desejar (+ Criar Nova Categoria...).
 
-4. **Busca Instantânea em Tempo Real**:
+5. **Busca Instantânea em Tempo Real**:
    - Filtra por nome, patologia, drogas ou tags.
    - Pressione `/` no teclado em qualquer tela para focar na busca.
 
-5. **Favoritos do Plantão (⭐)**:
+6. **Favoritos do Plantão (⭐)**:
    - Fixe os protocolos mais consultados no posto de UTI.
 
-6. **Modo Escuro / Noturno**:
+7. **Modo Escuro / Noturno**:
    - Conforto visual para plantões noturnos com 1 clique.
