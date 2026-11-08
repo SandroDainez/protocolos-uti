@@ -105,7 +105,7 @@ const INITIAL_PROTOCOLS = [
     "category": "Ventilação & Via Aérea",
     "type": "Link Web",
     "url": "https://desmame-ventilatorio-avancado-sandro.foldeddell2.chatgpt.site/",
-    "version": "1/2026",
+    "version": "1/ 2026",
     "isEmergency": false,
     "description": "Desmame Ventilatório",
     "tags": [
