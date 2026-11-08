@@ -1,6 +1,19 @@
 // Arquivo de dados dos Protocolos da sua UTI
 const INITIAL_PROTOCOLS = [
   {
+    "id": "proto-1794104579709",
+    "title": "Sedação e Analgesia",
+    "category": "Sedação, Analgesia & Neuro",
+    "type": "Link Web",
+    "url": "https://sedacao-analgesia-uti-sandro-202611.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "Sedação e Analgesia",
+    "tags": [
+      "sedação e analgesia"
+    ]
+  },
+  {
     "id": "proto-1794090256557",
     "title": "Antibioticoprofilaxia",
     "category": "Infectologia & Sepse",
