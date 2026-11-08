@@ -1,6 +1,90 @@
 // Arquivo de dados dos Protocolos da sua UTI
 const INITIAL_PROTOCOLS = [
   {
+    "id": "proto-1794090256557",
+    "title": "Antibioticoprofilaxia",
+    "category": "Infectologia & Sepse",
+    "type": "Link Web",
+    "url": "https://antibioticoprofilaxia-cirurgica-sandro-071126.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "Antibioticoprofilaxia",
+    "tags": [
+      "antibioticoprofilaxia"
+    ]
+  },
+  {
+    "id": "proto-1794089424041",
+    "title": "Mobilização Precoce",
+    "category": "Mobilização Precoce",
+    "type": "Link Web",
+    "url": "https://mobilizacao-uti-sandro-071126.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "Mobilização Precoce",
+    "tags": [
+      "mobilização",
+      "prevenções uti"
+    ]
+  },
+  {
+    "id": "proto-1794089037326",
+    "title": "Lesão por pressão",
+    "category": "Cuidados de Enfermagem",
+    "type": "Link Web",
+    "url": "https://lesao-pressao-uti-sandro-071126.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "Lesão por pressão cuidados",
+    "tags": [
+      "lesão por pressão",
+      "escaras"
+    ]
+  },
+  {
+    "id": "proto-1794088672722",
+    "title": "ITU Relacionado a Cateter Vesical",
+    "category": "Infectologia & Sepse",
+    "type": "Link Web",
+    "url": "https://itu-cateter-avancado-sandro-071126.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "ITU Relacionado a Cateter Vesical, Prevenção",
+    "tags": [
+      "itu",
+      "prevenção"
+    ]
+  },
+  {
+    "id": "proto-1794087996956",
+    "title": "Delirium",
+    "category": "Sedação, Analgesia & Neuro",
+    "type": "Link Web",
+    "url": "https://delirium-uti-avancado-sandro-071126.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "Delirium como abordar corretamente",
+    "tags": [
+      "delirium",
+      "agitação"
+    ]
+  },
+  {
+    "id": "proto-1794087314579",
+    "title": "Prevenção Infecção Cateter Central",
+    "category": "Infectologia & Sepse",
+    "type": "Link Web",
+    "url": "https://cvc-do-zero-sandro-071126.foldeddell2.chatgpt.site/",
+    "version": "1/ 2026",
+    "isEmergency": false,
+    "description": "Prevenção Infecção Cateter Central",
+    "tags": [
+      "infecção",
+      "cateter central",
+      "prevenção"
+    ]
+  },
+  {
     "id": "proto-1794074753205",
     "title": "Pneumonia Associada a Ventilação Mecânica (PAV) Prevenção",
     "category": "Ventilação & Via Aérea",
