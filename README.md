@@ -11,14 +11,13 @@ Um portal web moderno, rápido, responsivo e limpo para centralizar e organizar 
    - Botão **`← Voltar aos Protocolos`** fixo no topo (ou aperte `Esc`).
    - Opção de abrir em nova aba (`↗`) caso prefira guias separadas.
 
-2. **Padrão Visual dos Cards**:
-   - Título e breve resumo clínico.
-   - Badge com a especialidade/categoria (colorida).
-   - Formato do documento (PDF, Diretriz, Checklist, Fluxograma, Drive, etc.).
-   - Badge de destaque vermelho para **Emergências Críticas**.
-   - Tags clicáveis para filtragem rápida.
-   - Botão de **Copiar Link** direto.
-   - Botões de **Editar (✏️)** e **Excluir (🗑️)** visíveis **apenas para o Administrador**.
+2. **Organização em Índice Alfabético Numerado (A - Z)**:
+   - Todos os protocolos são ordenados alfabeticamente com **numeração sequencial (`#01`, `#02`, `#03`...)**.
+   - **Índice Clicável A-Z**: barra superior com letras do alfabeto para filtrar instantaneamente pela inicial (ex: clique em `D` para ver Desmame, `P` para PAV/Profilaxia). Letras com protocolos ficam destacadas com ponto indicador.
+   - **Alternador de Visualização (Cards vs Lista / Índice)**:
+     - *Modo Índice / Lista*: visual compacto em tabela médica, perfeito para consultas rápidas na UTI.
+     - *Modo Cards*: visualização detalhada com resumo clínico e tags.
+   - **Menu Dropdown de Especialidades**: substitui a antiga barra de rolagem horizontal por um seletor limpo com contagem de protocolos por especialidade.
 
 3. **Segurança e Modo Somente Leitura (Público)**:
    - Qualquer pessoa com o link entra por padrão em **Modo Somente Leitura**: não vê botões de cadastro, edição ou exclusão.

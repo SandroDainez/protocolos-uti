@@ -206,15 +206,93 @@
         </div>
       </div>
 
-      <!-- Filtro por Categorias (Pills) -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-pills">
-        <!-- Renderizado dinamicamente via JS -->
+      <!-- BARRA DE CONTROLE: Especialidade (Dropdown) + Atalhos + Modo de Visualização (Cards vs Índice) -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <!-- Seletor de Categoria / Especialidade (Sem scroll horizontal infinito) -->
+        <div class="flex-1 flex items-center gap-2">
+          <label for="category-select" class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0 flex items-center gap-1">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+            <span>Especialidade:</span>
+          </label>
+          <select 
+            id="category-select" 
+            onchange="setCategory(this.value)" 
+            class="w-full text-xs sm:text-sm py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+          >
+            <!-- Preenchido dinamicamente via JS com contadores -->
+          </select>
+        </div>
+
+        <!-- Atalhos Rápidos e Alternador de Modo de Visualização (Cards vs Índice) -->
+        <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+          <!-- Botão de Favoritos Rápido -->
+          <button 
+            id="btn-filter-favs"
+            onclick="toggleFavoriteFilter()" 
+            class="px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition"
+            title="Filtrar Favoritos do Plantão"
+          >
+            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span class="hidden md:inline">Favoritos</span>
+          </button>
+
+          <div class="h-6 w-px bg-slate-200 dark:border-slate-800"></div>
+
+          <!-- Alternador de Visão: Índice / Lista vs Cards -->
+          <div class="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
+            <button 
+              id="view-mode-list" 
+              onclick="setViewMode('list')" 
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              title="Visualização em Lista / Sumário Alfabético"
+            >
+              <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i>
+              <span>Índice</span>
+            </button>
+            <button 
+              id="view-mode-cards" 
+              onclick="setViewMode('cards')" 
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-sm"
+              title="Visualização em Cards"
+            >
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+              <span>Cards</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ÍNDICE CLICÁVEL EM ORDEM ALFABÉTICA (A - Z) -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <i data-lucide="sort-asc" class="w-3.5 h-3.5 text-sky-500"></i>
+            Índice Alfabético Clicável (A - Z)
+          </span>
+          <span id="alphabet-active-info" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+            Exibindo todos os protocolos
+          </span>
+        </div>
+        <div 
+          id="alphabet-index-bar" 
+          class="flex flex-wrap items-center gap-1 p-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
+        >
+          <!-- Renderizado dinamicamente via JavaScript -->
+        </div>
       </div>
     </div>
 
-    <!-- GRID DE PROTOCOLOS -->
-    <div id="protocols-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      <!-- Renderizado via JavaScript -->
+    <!-- CONTAINER DE PROTOCOLOS (Suporta modo Grid ou modo Lista) -->
+    <div id="protocols-container">
+      <!-- GRID DE CARDS -->
+      <div id="protocols-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Renderizado via JavaScript -->
+      </div>
+
+      <!-- LISTA / ÍNDICE ALFABÉTICO NUMERADO -->
+      <div id="protocols-list" class="hidden space-y-2.5">
+        <!-- Renderizado via JavaScript -->
+      </div>
     </div>
 
     <!-- TELA INICIAL VAZIA / BEM-VINDO (Quando não há protocolos cadastrados) -->
@@ -608,6 +686,9 @@
     let protocols = [];
     let favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
     let currentCategory = 'Todas';
+    let currentLetter = 'TODAS';
+    let viewMode = localStorage.getItem('uti_view_mode') || 'cards';
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     let searchQuery = '';
     let isEmergencyFilterActive = false;
     let currentViewingProtocol = null;
@@ -633,9 +714,11 @@
       // Carregar dados salvos ou do data.js
       loadProtocolsData();
 
-      // Sincronizar interface com permissão de Administrador
+      // Sincronizar interface com permissão de Administrador e modo de visualização
       updateAdminUI();
+      updateViewModeUI();
       renderCategories();
+      renderAlphabetIndex();
       renderProtocols();
       lucide.createIcons();
 
@@ -867,31 +950,91 @@
       }
     }
 
+    function setViewMode(mode) {
+      viewMode = mode;
+      localStorage.setItem('uti_view_mode', mode);
+      updateViewModeUI();
+      renderProtocols();
+    }
+
+    function updateViewModeUI() {
+      const btnList = document.getElementById('view-mode-list');
+      const btnCards = document.getElementById('view-mode-cards');
+      const gridContainer = document.getElementById('protocols-grid');
+      const listContainer = document.getElementById('protocols-list');
+
+      if (viewMode === 'list') {
+        if (btnList) {
+          btnList.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-sm';
+        }
+        if (btnCards) {
+          btnCards.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+        }
+        if (gridContainer) gridContainer.classList.add('hidden');
+        if (listContainer) listContainer.classList.remove('hidden');
+      } else {
+        if (btnCards) {
+          btnCards.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-sm';
+        }
+        if (btnList) {
+          btnList.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+        }
+        if (gridContainer) gridContainer.classList.remove('hidden');
+        if (listContainer) listContainer.classList.add('hidden');
+      }
+    }
+
     function renderCategories() {
-      const container = document.getElementById('category-pills');
-      const uniqueCats = [...new Set(protocols.map(p => p.category).filter(Boolean))];
-      
-      if (uniqueCats.length === 0) {
-        container.innerHTML = '';
-        return;
+      const select = document.getElementById('category-select');
+      const favBtn = document.getElementById('btn-filter-favs');
+      if (!select) return;
+
+      const uniqueCats = [...new Set(protocols.map(p => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      const favCount = protocols.filter(p => favorites.includes(p.id)).length;
+
+      let optionsHtml = `
+        <option value="Todas" ${currentCategory === 'Todas' ? 'selected' : ''}>
+          Todas as Especialidades (${protocols.length})
+        </option>
+        <option value="Favoritos ⭐" ${currentCategory === 'Favoritos ⭐' ? 'selected' : ''}>
+          ⭐ Favoritos do Plantão (${favCount})
+        </option>
+      `;
+
+      if (uniqueCats.length > 0) {
+        optionsHtml += `<optgroup label="Especialidades da UTI">`;
+        uniqueCats.forEach(cat => {
+          const count = protocols.filter(p => p.category === cat).length;
+          optionsHtml += `
+            <option value="${cat}" ${currentCategory === cat ? 'selected' : ''}>
+              ${cat} (${count})
+            </option>
+          `;
+        });
+        optionsHtml += `</optgroup>`;
       }
 
-      const categories = ['Todas', 'Favoritos ⭐', ...uniqueCats];
-      
-      container.innerHTML = categories.map(cat => {
-        const isActive = currentCategory === cat;
-        const activeClass = isActive 
-          ? 'bg-sky-600 text-white shadow-sm' 
-          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800';
+      select.innerHTML = optionsHtml;
 
-        return `
-          <button 
-            onclick="setCategory('${cat}')" 
-            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${activeClass}">
-            ${cat}
-          </button>
-        `;
-      }).join('');
+      if (favBtn) {
+        if (currentCategory === 'Favoritos ⭐') {
+          favBtn.className = 'px-3 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-white shadow-sm flex items-center gap-1.5 transition';
+        } else {
+          favBtn.className = 'px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition';
+        }
+      }
+    }
+
+    function toggleFavoriteFilter() {
+      if (currentCategory === 'Favoritos ⭐') {
+        currentCategory = 'Todas';
+      } else {
+        currentCategory = 'Favoritos ⭐';
+      }
+      isEmergencyFilterActive = false;
+      updateEmergencyBtnUI();
+      renderCategories();
+      renderProtocols();
     }
 
     function setCategory(cat) {
@@ -899,6 +1042,89 @@
       isEmergencyFilterActive = false;
       updateEmergencyBtnUI();
       renderCategories();
+      renderAlphabetIndex();
+      renderProtocols();
+    }
+
+    function renderAlphabetIndex() {
+      const container = document.getElementById('alphabet-index-bar');
+      if (!container) return;
+
+      // Calcular contagem de protocolos por letra do alfabeto (considerando a lista total de protocolos)
+      const letterCounts = {};
+      protocols.forEach(p => {
+        if (p.title) {
+          // Normaliza para ignorar acentos: 'Úlcera' -> 'U', 'Ácido' -> 'A'
+          const char = p.title.trim().charAt(0).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (ALPHABET.includes(char)) {
+            letterCounts[char] = (letterCounts[char] || 0) + 1;
+          }
+        }
+      });
+
+      const isAllActive = currentLetter === 'TODAS';
+      const allBtnClass = isAllActive
+        ? 'bg-sky-600 text-white font-bold shadow-sm'
+        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium';
+
+      let html = `
+        <button 
+          onclick="setLetter('TODAS')" 
+          class="px-2.5 py-1 rounded-xl text-xs transition-all ${allBtnClass}">
+          Todos (${protocols.length})
+        </button>
+      `;
+
+      html += ALPHABET.map(letter => {
+        const count = letterCounts[letter] || 0;
+        const hasItems = count > 0;
+        const isSelected = currentLetter === letter;
+
+        if (isSelected) {
+          return `
+            <button 
+              onclick="setLetter('${letter}')" 
+              class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs font-bold bg-sky-600 text-white shadow-sm flex items-center justify-center transition-all">
+              ${letter}
+            </button>
+          `;
+        } else if (hasItems) {
+          return `
+            <button 
+              onclick="setLetter('${letter}')" 
+              title="${count} protocolo(s) iniciando com '${letter}'" 
+              class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs font-bold bg-sky-50 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700/80 hover:bg-sky-100 dark:hover:bg-sky-900 flex items-center justify-center transition-all relative">
+              ${letter}
+              <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-500 ring-1 ring-white dark:ring-slate-900"></span>
+            </button>
+          `;
+        } else {
+          return `
+            <span 
+              class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl text-xs font-medium text-slate-300 dark:text-slate-700 flex items-center justify-center cursor-default select-none">
+              ${letter}
+            </span>
+          `;
+        }
+      }).join('');
+
+      container.innerHTML = html;
+
+      // Atualiza texto informativo do índice
+      const activeInfo = document.getElementById('alphabet-active-info');
+      if (activeInfo) {
+        if (currentLetter === 'TODAS') {
+          activeInfo.textContent = `Exibindo todos os ${protocols.length} protocolos em ordem alfabética`;
+        } else {
+          const count = letterCounts[currentLetter] || 0;
+          activeInfo.textContent = `Filtrando pela letra "${currentLetter}" (${count} protocolo${count !== 1 ? 's' : ''})`;
+        }
+      }
+    }
+
+    function setLetter(letter) {
+      currentLetter = letter;
+      renderAlphabetIndex();
       renderProtocols();
     }
 
@@ -930,17 +1156,20 @@
 
     function resetFilters() {
       currentCategory = 'Todas';
+      currentLetter = 'TODAS';
       searchQuery = '';
       isEmergencyFilterActive = false;
       const searchInput = document.getElementById('search-input');
       if (searchInput) searchInput.value = '';
       updateEmergencyBtnUI();
       renderCategories();
+      renderAlphabetIndex();
       renderProtocols();
     }
 
     function renderProtocols() {
-      const container = document.getElementById('protocols-grid');
+      const gridContainer = document.getElementById('protocols-grid');
+      const listContainer = document.getElementById('protocols-list');
       const initialEmptyState = document.getElementById('initial-empty-state');
       const searchEmptyState = document.getElementById('search-empty-state');
       const counter = document.getElementById('protocol-counter');
@@ -949,7 +1178,8 @@
 
       // Se não há nenhum protocolo no sistema
       if (protocols.length === 0) {
-        container.innerHTML = '';
+        if (gridContainer) gridContainer.innerHTML = '';
+        if (listContainer) listContainer.innerHTML = '';
         counter.textContent = '0 protocolos';
         initialEmptyState.classList.remove('hidden');
         searchEmptyState.classList.add('hidden');
@@ -969,6 +1199,7 @@
         emergencyBanner.classList.add('hidden');
       }
 
+      // Filtragem de protocolos
       const filtered = protocols.filter(p => {
         if (isEmergencyFilterActive && !p.isEmergency) return false;
 
@@ -976,6 +1207,12 @@
           if (!favorites.includes(p.id)) return false;
         } else if (currentCategory !== 'Todas') {
           if (p.category !== currentCategory) return false;
+        }
+
+        // Filtro pelo Índice Alfabético Clicável (A - Z)
+        if (currentLetter && currentLetter !== 'TODAS') {
+          const firstChar = (p.title || '').trim().charAt(0).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (firstChar !== currentLetter) return false;
         }
 
         if (searchQuery) {
@@ -989,10 +1226,16 @@
         return true;
       });
 
+      // ORDENAÇÃO ALFABÉTICA OBRIGATÓRIA (A - Z)
+      filtered.sort((a, b) => {
+        return (a.title || '').trim().localeCompare((b.title || '').trim(), 'pt-BR', { sensitivity: 'base' });
+      });
+
       counter.textContent = `${filtered.length} protocolo${filtered.length !== 1 ? 's' : ''}`;
 
       if (filtered.length === 0) {
-        container.innerHTML = '';
+        if (gridContainer) gridContainer.innerHTML = '';
+        if (listContainer) listContainer.innerHTML = '';
         searchEmptyState.classList.remove('hidden');
         lucide.createIcons();
         return;
@@ -1000,75 +1243,158 @@
 
       searchEmptyState.classList.add('hidden');
 
-      container.innerHTML = filtered.map(p => {
-        const isFav = favorites.includes(p.id);
-        const emergencyBadge = p.isEmergency 
-          ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-400 border border-red-200 dark:border-red-800">
-               <i data-lucide="zap" class="w-3 h-3"></i> Emergência
-             </span>`
-          : '';
+      // 1. RENDERIZAR MODO GRID (CARDS)
+      if (gridContainer) {
+        gridContainer.innerHTML = filtered.map((p, index) => {
+          const formattedIndex = `#${String(index + 1).padStart(2, '0')}`;
+          const isFav = favorites.includes(p.id);
+          const emergencyBadge = p.isEmergency 
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-400 border border-red-200 dark:border-red-800">
+                 <i data-lucide="zap" class="w-3 h-3"></i> Emergência
+               </span>`
+            : '';
 
-        const adminButtons = isAdmin ? `
-          <!-- Botão Editar (Apenas Administrador) -->
-          <button onclick="editProtocol('${p.id}')" title="Editar protocolo" class="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 p-1 transition">
-            <i data-lucide="pencil" class="w-4 h-4"></i>
-          </button>
-          <!-- Botão Excluir (Apenas Administrador) -->
-          <button onclick="deleteProtocol('${p.id}')" title="Excluir protocolo" class="text-slate-400 hover:text-red-600 p-1 transition">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-          </button>
-        ` : '';
+          const adminButtons = isAdmin ? `
+            <!-- Botão Editar (Apenas Administrador) -->
+            <button onclick="editProtocol('${p.id}')" title="Editar protocolo" class="text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 p-1 transition">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <!-- Botão Excluir (Apenas Administrador) -->
+            <button onclick="deleteProtocol('${p.id}')" title="Excluir protocolo" class="text-slate-400 hover:text-red-600 p-1 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          ` : '';
 
-        return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-sm hover:shadow-md hover:border-sky-300 dark:hover:border-sky-800 transition-all flex flex-col justify-between group">
-            <div>
-              <!-- Cabeçalho do Card: Categoria, Badges, Editar, Excluir e Favorito -->
-              <div class="flex items-start justify-between gap-2 mb-3">
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
-                    ${p.category || 'Geral'}
-                  </span>
-                  ${p.type ? `<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono">${p.type}</span>` : ''}
-                  ${emergencyBadge}
+          return `
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-sm hover:shadow-md hover:border-sky-300 dark:hover:border-sky-800 transition-all flex flex-col justify-between group">
+              <div>
+                <!-- Cabeçalho do Card: Número Alfabético, Categoria, Badges, Editar, Excluir e Favorito -->
+                <div class="flex items-start justify-between gap-2 mb-3">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <!-- Número Sequencial Alfabético -->
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                      ${formattedIndex}
+                    </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      ${p.category || 'Geral'}
+                    </span>
+                    ${p.type ? `<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono">${p.type}</span>` : ''}
+                    ${emergencyBadge}
+                  </div>
+                  
+                  <div class="flex items-center gap-1">
+                    ${adminButtons}
+                    <!-- Botão Favorito -->
+                    <button onclick="toggleFavorite('${p.id}')" title="Favoritar" class="text-slate-300 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400 p-1 transition">
+                      <i data-lucide="star" class="w-4 h-4 ${isFav ? 'text-amber-400 fill-amber-400' : ''}"></i>
+                    </button>
+                  </div>
                 </div>
-                
-                <div class="flex items-center gap-1">
-                  ${adminButtons}
-                  <!-- Botão Favorito -->
-                  <button onclick="toggleFavorite('${p.id}')" title="Favoritar" class="text-slate-300 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400 p-1 transition">
-                    <i data-lucide="star" class="w-4 h-4 ${isFav ? 'text-amber-400 fill-amber-400' : ''}"></i>
+
+                <!-- Título (Clicável para visualizar com botão voltar) -->
+                <h4 onclick="openViewer('${p.id}')" class="text-base font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors line-clamp-2 mb-2 cursor-pointer">
+                  ${p.title}
+                </h4>
+
+                <!-- Descrição -->
+                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3">
+                  ${p.description || 'Sem descrição cadastrada.'}
+                </p>
+
+                <!-- Tags -->
+                ${p.tags && p.tags.length > 0 ? `
+                  <div class="flex flex-wrap gap-1 mb-4">
+                    ${p.tags.map(tag => `
+                      <button onclick="handleSearch('${tag}'); document.getElementById('search-input').value = '${tag}';" class="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 hover:bg-sky-100 hover:text-sky-700 dark:bg-slate-800 dark:hover:bg-slate-700 px-2 py-0.5 rounded-md transition">
+                        #${tag}
+                      </button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- Rodapé do Card: Versão e Ações -->
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                  ${p.version ? p.version : 'Vigente'}
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="copyProtocolLink('${p.url}')" title="Copiar Link" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                  </button>
+                  <a href="${p.url}" target="_blank" rel="noopener noreferrer" title="Abrir em Nova Aba" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                  </a>
+                  <!-- BOTÃO PRINCIPAL: VISUALIZAR COM BOTÃO VOLTAR -->
+                  <button onclick="openViewer('${p.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 active:scale-95 transition shadow-sm">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    <span>Visualizar</span>
                   </button>
                 </div>
               </div>
-
-              <!-- Título (Clicável para visualizar com botão voltar) -->
-              <h4 onclick="openViewer('${p.id}')" class="text-base font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors line-clamp-2 mb-2 cursor-pointer">
-                ${p.title}
-              </h4>
-
-              <!-- Descrição -->
-              <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-3">
-                ${p.description || 'Sem descrição cadastrada.'}
-              </p>
-
-              <!-- Tags -->
-              ${p.tags && p.tags.length > 0 ? `
-                <div class="flex flex-wrap gap-1 mb-4">
-                  ${p.tags.map(tag => `
-                    <button onclick="handleSearch('${tag}'); document.getElementById('search-input').value = '${tag}';" class="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 hover:bg-sky-100 hover:text-sky-700 dark:bg-slate-800 dark:hover:bg-slate-700 px-2 py-0.5 rounded-md transition">
-                      #${tag}
-                    </button>
-                  `).join('')}
-                </div>
-              ` : ''}
             </div>
+          `;
+        }).join('');
+      }
 
-            <!-- Rodapé do Card: Versão e Ações -->
-            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-              <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                ${p.version ? p.version : 'Vigente'}
-              </span>
-              <div class="flex items-center gap-1.5">
+      // 2. RENDERIZAR MODO LISTA (ÍNDICE ALFABÉTICO NUMERADO)
+      if (listContainer) {
+        listContainer.innerHTML = filtered.map((p, index) => {
+          const formattedIndex = `#${String(index + 1).padStart(2, '0')}`;
+          const isFav = favorites.includes(p.id);
+          const emergencyBadge = p.isEmergency 
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-400 border border-red-200 dark:border-red-800">
+                 <i data-lucide="zap" class="w-3 h-3"></i> Emergência
+               </span>`
+            : '';
+
+          const adminButtons = isAdmin ? `
+            <button onclick="editProtocol('${p.id}')" title="Editar protocolo" class="p-2 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deleteProtocol('${p.id}')" title="Excluir protocolo" class="p-2 text-slate-400 hover:text-red-600 rounded-lg transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          ` : '';
+
+          return `
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 p-3.5 sm:p-4 shadow-sm hover:shadow-md hover:border-sky-300 dark:hover:border-sky-800 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 group">
+              <!-- Lado Esquerdo: Número #01, Título, Categoria e Descrição -->
+              <div class="flex items-start gap-3 min-w-0 flex-1">
+                <!-- Número Sequencial Alfabético -->
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center font-mono font-bold text-xs sm:text-sm shrink-0 shadow-sm mt-0.5 md:mt-0">
+                  ${formattedIndex}
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <h4 onclick="openViewer('${p.id}')" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors cursor-pointer truncate max-w-full">
+                      ${p.title}
+                    </h4>
+                    ${emergencyBadge}
+                  </div>
+                  
+                  <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-2">
+                    ${p.description || 'Sem descrição cadastrada.'}
+                  </p>
+
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      ${p.category || 'Geral'}
+                    </span>
+                    ${p.type ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">${p.type}</span>` : ''}
+                    ${p.version ? `<span class="text-[10px] text-slate-400 font-medium">• ${p.version}</span>` : ''}
+                    ${(p.tags || []).slice(0, 3).map(t => `<span class="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800/60 px-1.5 py-0.5 rounded">#${t}</span>`).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lado Direito: Ações Rápidas -->
+              <div class="flex items-center justify-end gap-1 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                ${adminButtons}
+                <button onclick="toggleFavorite('${p.id}')" title="Favoritar" class="p-2 text-slate-300 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400 rounded-lg transition">
+                  <i data-lucide="star" class="w-4 h-4 ${isFav ? 'text-amber-400 fill-amber-400' : ''}"></i>
+                </button>
                 <button onclick="copyProtocolLink('${p.url}')" title="Copiar Link" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
                   <i data-lucide="copy" class="w-4 h-4"></i>
                 </button>
@@ -1082,9 +1408,9 @@
                 </button>
               </div>
             </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
 
       lucide.createIcons();
     }
